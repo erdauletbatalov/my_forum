@@ -10,13 +10,13 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/erdauletbatalov/forum.git/pkg/models/sqlite"
+	sqlite "github.com/erdauletbatalov/forum.git/pkg/models/sqlite"
 )
 
 type application struct {
 	errorLog      *log.Logger
 	infoLog       *log.Logger
-	snippets      *sqlite.SnippetModel
+	forum         *sqlite.ForumModel
 	templateCache map[string]*template.Template
 }
 
@@ -35,18 +35,18 @@ func main() {
 	defer db.Close()
 
 	// // Инициализируем новый кэш шаблона...
-	// templateCache, err := newTemplateCache("./ui/html/")
-	// if err != nil {
-	// 	errorLog.Fatal(err)
-	// }
+	templateCache, err := newTemplateCache("./ui/html/")
+	if err != nil {
+		errorLog.Fatal(err)
+	}
 
 	// И добавляем его в зависимостях нашего
 	// веб-приложения.
 	app := &application{
-		errorLog: errorLog,
-		infoLog:  infoLog,
-		snippets: &sqlite.SnippetModel{DB: db},
-		// templateCache: templateCache,
+		errorLog:      errorLog,
+		infoLog:       infoLog,
+		forum:         &sqlite.ForumModel{DB: db},
+		templateCache: templateCache,
 	}
 
 	srv := &http.Server{
