@@ -31,7 +31,7 @@ func (app *application) notFound(w http.ResponseWriter) {
 
 func (app *application) render(w http.ResponseWriter, r *http.Request, name string, td *templateData) {
 	// Извлекаем соответствующий набор шаблонов из кэша в зависимости от названия страницы
-	// (например, 'home.page.tmpl'). Если в кэше нет записи запрашиваемого шаблона, то
+	// (например, 'home.page.html'). Если в кэше нет записи запрашиваемого шаблона, то
 	// вызывается вспомогательный метод serverError(), который мы создали ранее.
 	ts, ok := app.templateCache[name]
 	if !ok {

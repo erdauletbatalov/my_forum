@@ -15,7 +15,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		app.render(w, r, "home.page.tmpl", &templateData{})
+		app.render(w, r, "home.page.html", &templateData{})
 	default:
 		w.Header().Set("Allow", http.MethodGet)
 		app.clientError(w, http.StatusMethodNotAllowed)
@@ -39,7 +39,7 @@ func (app *application) signup(w http.ResponseWriter, r *http.Request) {
 		}
 		http.Redirect(w, r, "/signin", 301)
 	case http.MethodGet:
-		app.render(w, r, "signup.page.tmpl", &templateData{})
+		app.render(w, r, "signup.page.html", &templateData{})
 	default:
 		w.Header().Set("Allow", http.MethodPost)
 		w.Header().Set("Allow", http.MethodGet)
@@ -64,9 +64,9 @@ func (app *application) signin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		foundUser = foundUser
-		http.Redirect(w, r, "/home", 301)
+		http.Redirect(w, r, "/", 301)
 	case http.MethodGet:
-		app.render(w, r, "signin.page.tmpl", &templateData{})
+		app.render(w, r, "signin.page.html", &templateData{})
 	default:
 		w.Header().Set("Allow", http.MethodPost)
 		w.Header().Set("Allow", http.MethodGet)
