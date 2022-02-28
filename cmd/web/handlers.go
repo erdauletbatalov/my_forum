@@ -37,6 +37,7 @@ func (app *application) signup(w http.ResponseWriter, r *http.Request) {
 			app.serverError(w, err)
 			return
 		}
+		http.Redirect(w, r, "/signin", 301)
 	case http.MethodGet:
 		app.render(w, r, "signup.page.tmpl", &templateData{})
 	default:
@@ -45,6 +46,31 @@ func (app *application) signup(w http.ResponseWriter, r *http.Request) {
 		app.clientError(w, http.StatusMethodNotAllowed)
 		return
 	}
-	// Используем помощника render() для отображения шаблона.
-	app.render(w, r, "signup.page.tmpl", &templateData{})
+}
+
+func (app *application) signin(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		fmt.Println("POST!!!")
+		user := models.User{
+			Email:    r.FormValue("email"),
+			Password: r.FormValue("password"),
+		}
+		foundUser := &models.User{}
+		var err error
+		foundUser, err = app.forum.LogInUser(&user)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+		foundUser = foundUser
+		http.Redirect(w, r, "/home", 301)
+	case http.MethodGet:
+		app.render(w, r, "signin.page.tmpl", &templateData{})
+	default:
+		w.Header().Set("Allow", http.MethodPost)
+		w.Header().Set("Allow", http.MethodGet)
+		app.clientError(w, http.StatusMethodNotAllowed)
+		return
+	}
 }
