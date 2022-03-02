@@ -35,7 +35,7 @@ func (m *ForumModel) LogInUser(user *models.User) (*models.User, error) {
 	u := &models.User{}
 
 	row := m.DB.QueryRow(stmt, user.Email)
-	err := row.Scan(&u.Email)
+	err := row.Scan(&u.Password)
 	if err != nil {
 		// Специально для этого случая, мы проверим при помощи функции errors.Is()
 		// если запрос был выполнен с ошибкой. Если ошибка обнаружена, то
@@ -45,6 +45,9 @@ func (m *ForumModel) LogInUser(user *models.User) (*models.User, error) {
 		} else {
 			return nil, err
 		}
+	}
+	if err = bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(user.Password)); err != nil {
+		return nil, err
 	}
 	return u, nil
 }

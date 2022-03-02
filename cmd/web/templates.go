@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"html/template" // новый импорт
 	"path/filepath" // новый импорт
-
-	"github.com/erdauletbatalov/forum.git/pkg/models"
 )
 
 type templateData struct {
-	User  *models.User
-	Users []*models.User
+	// User  *models.User
+	// Users []*models.User
+	Error bool
 }
 
 func newTemplateCache(dir string) (map[string]*template.Template, error) {

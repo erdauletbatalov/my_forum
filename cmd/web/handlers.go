@@ -49,6 +49,7 @@ func (app *application) signup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) signin(w http.ResponseWriter, r *http.Request) {
+
 	switch r.Method {
 	case http.MethodPost:
 		fmt.Println("POST!!!")
@@ -56,15 +57,16 @@ func (app *application) signin(w http.ResponseWriter, r *http.Request) {
 			Email:    r.FormValue("email"),
 			Password: r.FormValue("password"),
 		}
-		foundUser := &models.User{}
+		// foundUser := &models.User{}
 		var err error
-		foundUser, err = app.forum.LogInUser(&user)
+		_, err = app.forum.LogInUser(&user)
 		if err != nil {
-			app.serverError(w, err)
+			app.render(w, r, "signin.page.html", &templateData{
+				Error: true,
+			})
 			return
 		}
-		foundUser = foundUser
-		http.Redirect(w, r, "/", 301)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	case http.MethodGet:
 		app.render(w, r, "signin.page.html", &templateData{})
 	default:
