@@ -1,4 +1,4 @@
-package mysql
+package sqlite
 
 import (
 	"database/sql"
@@ -51,3 +51,5 @@ func (m *ForumModel) LogInUser(user *models.User) (*models.User, error) {
 	}
 	return u, nil
 }
+
+// func (m *ForumModel) GetUser(user *models.User) (*models.User, error) {

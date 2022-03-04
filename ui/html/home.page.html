@@ -1,8 +1,6 @@
-{{template "base" .}}
-
-{{define "title"}}Forum main page{{end}}
-
-{{define "main"}}
-    <h2>page main coool</h2>
-    
-{{end}}
+{{template "base" .}} {{define "title"}}Forum main page{{end}} {{define "main"}}
+{{if .IsSession}}
+<h2>Welcome {{ .User.Email }}</h2>
+{{ else }}
+<h2>Home page</h2>
+{{end}} {{end}}
