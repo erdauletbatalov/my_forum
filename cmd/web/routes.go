@@ -7,7 +7,8 @@ func (app *application) routes() *http.ServeMux {
 	mux.HandleFunc("/", app.home)
 	mux.HandleFunc("/signup", app.signup)
 	mux.HandleFunc("/signin", app.signin)
-	mux.HandleFunc("/home", app.home)
+	mux.HandleFunc("/signout", app.signout)
+	mux.HandleFunc("/user/profile", app.profile)
 
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))

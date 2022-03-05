@@ -11,8 +11,13 @@ import (
 type templateData struct {
 	User *models.User
 	// Users []*models.User
-	Error     bool
+	IsError   isError
 	IsSession bool
+}
+
+type isError struct {
+	Error bool
+	Text  string
 }
 
 func newTemplateCache(dir string) (map[string]*template.Template, error) {

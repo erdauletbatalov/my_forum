@@ -21,6 +21,8 @@ func (s Session) IsExpired() bool {
 	return s.Expiry.Before(time.Now())
 }
 
+// IsSession checks if user and server has simmilar session. It returns true and user's credentials if
+// so and false and empty user if not
 func IsSession(r *http.Request) (bool, *models.User) {
 	user := &models.User{}
 	c, err := r.Cookie("session_token")
@@ -32,10 +34,12 @@ func IsSession(r *http.Request) (bool, *models.User) {
 	if !exists {
 		return false, user
 	}
-	user.Email = userSession.Email
+
+	// Позже перенесу в GarbageCollector
 	if userSession.IsExpired() {
 		delete(Sessions, sessionToken)
 		return false, user
 	}
+	user.Email = userSession.Email
 	return true, user
 }

@@ -21,7 +21,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		isSession, user := session.IsSession(r)
 
 		app.render(w, r, "home.page.html", &templateData{
-			IsSession: isSession,
+			IsSession: isSession, //
 			User:      user,
 		})
 	default:
@@ -38,14 +38,27 @@ func (app *application) signup(w http.ResponseWriter, r *http.Request) {
 		user := models.User{
 			Email:    r.FormValue("email"),
 			Password: r.FormValue("password"),
-			Nickname: r.FormValue("nickname"),
+			Username: r.FormValue("nickname"),
 		}
 		err := app.forum.CreateUser(&user)
 		if err != nil {
+			switch err.Error() {
+			case "UNIQUE constraint failed: users.email":
+				app.render(w, r, "signup.page.html", &templateData{
+					IsError: isError{true, "this email is already in use"},
+				})
+				return
+			case "UNIQUE constraint failed: users.nickname":
+				app.render(w, r, "signup.page.html", &templateData{
+					IsError: isError{true, "this nickname is already in use"},
+				})
+				return
+
+			}
 			app.serverError(w, err)
 			return
 		}
-		http.Redirect(w, r, "/signin", 301)
+		http.Redirect(w, r, "/signin", http.StatusMovedPermanently)
 	case http.MethodGet:
 		app.render(w, r, "signup.page.html", &templateData{})
 	default:
@@ -60,17 +73,16 @@ func (app *application) signin(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodPost:
-		fmt.Println("POST!!!")
 		user := models.User{
 			Email:    r.FormValue("email"),
 			Password: r.FormValue("password"),
 		}
 		// foundUser := &models.User{}
 		var err error
-		_, err = app.forum.LogInUser(&user)
+		err = app.forum.LogInUser(&user)
 		if err != nil {
 			app.render(w, r, "signin.page.html", &templateData{
-				Error: true,
+				IsError: isError{true, "incorrect email or password"},
 			})
 			return
 		}
@@ -84,9 +96,6 @@ func (app *application) signin(w http.ResponseWriter, r *http.Request) {
 			Email:  user.Email,
 			Expiry: expiresAt,
 		}
-
-		// Finally, we set the client cookie for "session_token" as the session token we just generated
-		// we also set an expiry time of 120 seconds
 		http.SetCookie(w, &http.Cookie{
 			Name:    "session_token",
 			Value:   sessionToken,
@@ -97,6 +106,56 @@ func (app *application) signin(w http.ResponseWriter, r *http.Request) {
 		app.render(w, r, "signin.page.html", &templateData{})
 	default:
 		w.Header().Set("Allow", http.MethodPost)
+		w.Header().Set("Allow", http.MethodGet)
+		app.clientError(w, http.StatusMethodNotAllowed)
+		return
+	}
+}
+
+func (app *application) profile(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/user/profile" {
+		app.notFound(w)
+		return
+	}
+	switch r.Method {
+	case http.MethodGet:
+		isSession, user := session.IsSession(r)
+		if isSession {
+			var err error
+			user, err = app.forum.GetUser(user.Email)
+			if err != nil {
+				fmt.Println("error email not found")
+				http.Redirect(w, r, "/", http.StatusSeeOther)
+				return
+			}
+			app.render(w, r, "profile.page.html", &templateData{
+				IsSession: isSession,
+				User:      user,
+			})
+			return
+		} else {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+	default:
+		w.Header().Set("Allow", http.MethodGet)
+		app.clientError(w, http.StatusMethodNotAllowed)
+		return
+	}
+}
+
+func (app *application) signout(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		isSession, _ := session.IsSession(r)
+		if isSession {
+			c, _ := r.Cookie("session_token")
+			sessionToken := c.Value
+			delete(session.Sessions, sessionToken)
+		}
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+
+	default:
 		w.Header().Set("Allow", http.MethodGet)
 		app.clientError(w, http.StatusMethodNotAllowed)
 		return

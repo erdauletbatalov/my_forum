@@ -54,6 +54,12 @@
     <label for="floatingPassword">Confirm password</label>
   </div>
 
+  {{if .IsError.Error}}
+  <div>
+    <label>{{.IsError.Text}}</label>
+  </div>
+  {{end}}
+
   <!-- <div class="checkbox mb-3">
     <label> <input type="checkbox" value="remember-me" /> Remember me </label>
   </div> -->

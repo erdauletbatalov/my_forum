@@ -9,6 +9,6 @@ var Error bool
 type User struct {
 	ID       int
 	Email    string
+	Username string
 	Password string
-	Nickname string
 }

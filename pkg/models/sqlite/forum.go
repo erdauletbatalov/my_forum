@@ -19,7 +19,7 @@ func (m *ForumModel) CreateUser(user *models.User) error {
 	stmt := `INSERT INTO "users" ("email", "password", "nickname") 
 	VALUES(?, ?, ?)`
 
-	_, err = m.DB.Exec(stmt, user.Email, hashedPassword, user.Nickname)
+	_, err = m.DB.Exec(stmt, user.Email, hashedPassword, user.Username)
 	if err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func (m *ForumModel) CreateUser(user *models.User) error {
 }
 
 // Insert - Метод для создания новой заметки в базе дынных.
-func (m *ForumModel) LogInUser(user *models.User) (*models.User, error) {
+func (m *ForumModel) LogInUser(user *models.User) error {
 	stmt := `SELECT "password" 
 					FROM "users" 
 					WHERE "email" = ?`
@@ -37,19 +37,32 @@ func (m *ForumModel) LogInUser(user *models.User) (*models.User, error) {
 	row := m.DB.QueryRow(stmt, user.Email)
 	err := row.Scan(&u.Password)
 	if err != nil {
-		// Специально для этого случая, мы проверим при помощи функции errors.Is()
-		// если запрос был выполнен с ошибкой. Если ошибка обнаружена, то
-		// возвращаем нашу ошибку из модели models.ErrNoRecord.
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.ErrNoRecord
+		} else {
+			return err
+		}
+	}
+	if err = bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(user.Password)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *ForumModel) GetUser(email string) (*models.User, error) {
+	stmt := `SELECT "id", "email", "username", "password"
+					FROM "users"
+					WHERE "email" = ?`
+	user := &models.User{}
+
+	row := m.DB.QueryRow(stmt, email)
+	err := row.Scan(&user.ID, &user.Email, &user.Username, &user.Password)
+	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, models.ErrNoRecord
 		} else {
 			return nil, err
 		}
 	}
-	if err = bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(user.Password)); err != nil {
-		return nil, err
-	}
-	return u, nil
+	return user, nil
 }
-
-// func (m *ForumModel) GetUser(user *models.User) (*models.User, error) {
