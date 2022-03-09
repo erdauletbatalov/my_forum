@@ -119,3 +119,27 @@ func (m *ForumModel) GetPostByID(id int) (*models.Post, error) {
 	}
 	return post, nil
 }
+
+func (m *ForumModel) GetAllPosts() ([]*models.Post, error) {
+	stmt := `SELECT "id", "title", "content" FROM "post"`
+
+	rows, err := m.DB.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var posts []*models.Post
+
+	for rows.Next() {
+		p := &models.Post{}
+		err = rows.Scan(&p.ID, &p.Title, &p.Content)
+		if err != nil {
+			return nil, err
+		}
+		posts = append(posts, p)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return posts, nil
+}

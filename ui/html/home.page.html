@@ -1,6 +1,15 @@
 {{template "base" .}} {{define "title"}}Forum main page{{end}} {{define "main"}}
 {{if .IsSession}}
 <h2>Welcome {{ .User.Email }}</h2>
-{{ else }}
+<h2>All Posts:</h2>
+{{else}}
 <h2>Home page</h2>
+<h2>All Posts:</h2>
+{{end}} {{if .Posts}} {{range .Posts}}
+<content>
+  <h2>Title: {{ .Title }}</h2>
+  <h2>Content: {{ .Content }}</h2>
+</content>
+{{end}} {{ else }}
+<p>Здесь ничего нет... пока что!</p>
 {{end}} {{end}}

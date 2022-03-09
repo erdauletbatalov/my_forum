@@ -11,6 +11,7 @@ import (
 type templateData struct {
 	User      *models.User
 	Post      *models.Post
+	Posts     []*models.Post
 	IsError   isError
 	IsSession bool
 }

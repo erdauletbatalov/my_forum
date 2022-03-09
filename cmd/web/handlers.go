@@ -20,21 +20,30 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
+		posts, err := app.forum.GetAllPosts()
+		if err != nil {
+			fmt.Println(err.Error())
+			app.clientError(w, http.StatusInternalServerError)
+			return
+		}
 		isSession, user_id := session.IsSession(r)
 		if isSession {
 			user, err := app.forum.GetUserByID(user_id)
 			if err != nil {
+				fmt.Println(err.Error())
 				app.clientError(w, http.StatusInternalServerError)
 				return
 			}
 			app.render(w, r, "home.page.html", &templateData{
 				IsSession: isSession, //
 				User:      user,
+				Posts:     posts,
 			})
 			return
 		}
 		app.render(w, r, "home.page.html", &templateData{
 			IsSession: isSession, //
+			Posts:     posts,
 		})
 
 	default:
