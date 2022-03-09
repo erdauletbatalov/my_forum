@@ -9,8 +9,8 @@ import (
 )
 
 type templateData struct {
-	User *models.User
-	// Users []*models.User
+	User      *models.User
+	Post      *models.Post
 	IsError   isError
 	IsSession bool
 }

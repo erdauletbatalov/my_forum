@@ -9,6 +9,8 @@ func (app *application) routes() *http.ServeMux {
 	mux.HandleFunc("/signin", app.signin)
 	mux.HandleFunc("/signout", app.signout)
 	mux.HandleFunc("/user/profile", app.profile)
+	mux.HandleFunc("/post/create", app.createPost)
+	mux.HandleFunc("/post", app.showPost)
 
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))

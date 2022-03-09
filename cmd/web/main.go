@@ -70,17 +70,24 @@ func openDB(dsn string) (*sql.DB, error) {
 	if err = db.Ping(); err != nil {
 		return nil, err
 	}
-	setup(db)
+	err = setup(db)
+	if err != nil {
+		return nil, err
+	}
 	return db, nil
 }
 
 func setup(db *sql.DB) error {
+	fmt.Println("setup processing")
 	query, err := ioutil.ReadFile("./pkg/models/sqlite/setup.sql")
+	fmt.Println("setup processing")
 	if err != nil {
-		return fmt.Errorf("setup: %s", err)
+		return fmt.Errorf("setup: %w", err)
 	}
+	fmt.Println("setup processing")
 	if _, err := db.Exec(string(query)); err != nil {
-		return fmt.Errorf("setup: %s", err)
+		return fmt.Errorf("setup: %w", err)
 	}
+	fmt.Println("setup success")
 	return nil
 }

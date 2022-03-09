@@ -12,3 +12,10 @@ type User struct {
 	Username string
 	Password string
 }
+
+type Post struct {
+	ID      int
+	User_id int
+	Title   string
+	Content string
+}

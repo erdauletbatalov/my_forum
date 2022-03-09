@@ -3,8 +3,6 @@ package session
 import (
 	"net/http"
 	"time"
-
-	"github.com/erdauletbatalov/forum.git/pkg/models"
 )
 
 // this map stores the users sessions. For larger scale applications, you can use a database or cache for this purpose
@@ -12,7 +10,7 @@ var Sessions = map[string]Session{}
 
 // each session contains the username of the user and the time at which it expires
 type Session struct {
-	Email  string
+	ID     int
 	Expiry time.Time
 }
 
@@ -23,23 +21,21 @@ func (s Session) IsExpired() bool {
 
 // IsSession checks if user and server has simmilar session. It returns true and user's credentials if
 // so and false and empty user if not
-func IsSession(r *http.Request) (bool, *models.User) {
-	user := &models.User{}
+func IsSession(r *http.Request) (bool, int) {
 	c, err := r.Cookie("session_token")
 	if err != nil {
-		return false, user
+		return false, 0
 	}
 	sessionToken := c.Value
 	userSession, exists := Sessions[sessionToken]
 	if !exists {
-		return false, user
+		return false, 0
 	}
 
 	// Позже перенесу в GarbageCollector
 	if userSession.IsExpired() {
 		delete(Sessions, sessionToken)
-		return false, user
+		return false, 0
 	}
-	user.Email = userSession.Email
-	return true, user
+	return true, userSession.ID
 }
