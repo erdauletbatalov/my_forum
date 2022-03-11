@@ -1,10 +1,7 @@
 {{template "base" .}} {{define "title"}} Profile page {{end}} {{define "main"}}
-<h1>My Profile</h1>
+<h1>{{.User.Username}}'s profile</h1>
 <content>
-  <h2>ID: {{ .User.ID }}</h2>
   <h2>Email: {{ .User.Email }}</h2>
   <h2>Username: {{ .User.Username }}</h2>
-  <h2>Password: {{ .User.Password }}</h2>
 </content>
-<signout><a href="/signout">Sign out</a></signout>
 {{end}}

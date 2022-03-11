@@ -4,23 +4,16 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 
+	"forum/pkg/models/sqlite"
+	"forum/web"
+
 	_ "github.com/mattn/go-sqlite3"
-
-	sqlite "github.com/erdauletbatalov/forum.git/pkg/models/sqlite"
 )
-
-type application struct {
-	errorLog      *log.Logger
-	infoLog       *log.Logger
-	forum         *sqlite.ForumModel
-	templateCache map[string]*template.Template
-}
 
 func main() {
 	addr := flag.String("addr", ":8080", "Сетевой адрес веб-сервера")
@@ -36,25 +29,22 @@ func main() {
 	}
 	defer db.Close()
 
-	// // Инициализируем новый кэш шаблона...
-	templateCache, err := newTemplateCache("./ui/html/")
+	templateCache, err := web.NewTemplateCache("./ui/html/")
 	if err != nil {
 		errorLog.Fatal(err)
 	}
 
-	// И добавляем его в зависимостях нашего
-	// веб-приложения.
-	app := &application{
-		errorLog:      errorLog,
-		infoLog:       infoLog,
-		forum:         &sqlite.ForumModel{DB: db},
-		templateCache: templateCache,
+	app := &web.Application{
+		ErrorLog:      errorLog,
+		InfoLog:       infoLog,
+		Forum:         &sqlite.ForumModel{DB: db},
+		TemplateCache: templateCache,
 	}
 
 	srv := &http.Server{
 		Addr:     *addr,
 		ErrorLog: errorLog,
-		Handler:  app.routes(),
+		Handler:  app.Routes(),
 	}
 
 	infoLog.Printf("Запуск сервера на http://localhost%s", *addr)

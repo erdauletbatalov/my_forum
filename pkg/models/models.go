@@ -16,6 +16,15 @@ type User struct {
 type Post struct {
 	ID      int
 	User_id int
+	Author  string
 	Title   string
+	Content string
+}
+
+type Comment struct {
+	ID      int
+	User_id int
+	Author  string
+	Post_id int
 	Content string
 }

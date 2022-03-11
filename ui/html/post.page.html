@@ -1,7 +1,32 @@
 {{template "base" .}} {{define "title"}} Profile page {{end}} {{define "main"}}
-<h1>{{.User.Username}}'s Post №{{.Post.ID}}</h1>
+<h1>Post №{{.Post.ID}}</h1>
 <content>
   <h2>Title: {{ .Post.Title }}</h2>
   <h2>Content: {{ .Post.Content }}</h2>
 </content>
+{{if .IsSession}}
+<h1>Add comment:</h1>
+<form method="post">
+  <div class="form-floating">
+    <textarea
+      type="text"
+      class="form-control"
+      id="comment"
+      name="comment"
+      placeholder="Comment"
+    ></textarea>
+    <label for="floatingInput">Comment</label>
+  </div>
+  <button class="w-25 btn btn-lg btn-primary" type="submit">Add</button>
+</form>
 {{end}}
+<!-- Content -->
+<h1>Comments:</h1>
+{{if .Comments}} {{range .Comments}}
+<content>
+  <h2>Author: <a href="user?id={{.User_id}}">{{ .Author }}</a></h2>
+  <p>Content: {{ .Content }}</p>
+</content>
+{{end}} {{ else }}
+<p>No comments...</p>
+{{end}} {{end}}

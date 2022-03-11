@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"errors"
@@ -7,12 +7,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/erdauletbatalov/forum.git/pkg/models"
-	"github.com/erdauletbatalov/forum.git/pkg/session"
-	"github.com/google/uuid"
+	"forum/pkg/models"
+	"forum/pkg/session"
+
+	uuid "github.com/satori/go.uuid"
 )
 
-func (app *application) home(w http.ResponseWriter, r *http.Request) {
+func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		app.notFound(w)
 		return
@@ -20,7 +21,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		posts, err := app.forum.GetAllPosts()
+		posts, err := app.Forum.GetAllPosts()
 		if err != nil {
 			fmt.Println(err.Error())
 			app.clientError(w, http.StatusInternalServerError)
@@ -28,7 +29,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		}
 		isSession, user_id := session.IsSession(r)
 		if isSession {
-			user, err := app.forum.GetUserByID(user_id)
+			user, err := app.Forum.GetUserByID(user_id)
 			if err != nil {
 				fmt.Println(err.Error())
 				app.clientError(w, http.StatusInternalServerError)
@@ -53,7 +54,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) signup(w http.ResponseWriter, r *http.Request) {
+func (app *Application) signup(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
 		fmt.Println("POST!!!")
@@ -62,7 +63,7 @@ func (app *application) signup(w http.ResponseWriter, r *http.Request) {
 			Password: r.FormValue("password"),
 			Username: r.FormValue("nickname"),
 		}
-		err := app.forum.AddUser(&user)
+		err := app.Forum.AddUser(&user)
 		if err != nil {
 			switch err.Error() {
 			case "UNIQUE constraint failed: user.email":
@@ -70,9 +71,10 @@ func (app *application) signup(w http.ResponseWriter, r *http.Request) {
 					IsError: isError{true, "this email is already in use"},
 				})
 				return
-			case "UNIQUE constraint failed: user.nickname":
+			case "UNIQUE constraint failed: user.username":
+				fmt.Println("rendering username already in use")
 				app.render(w, r, "signup.page.html", &templateData{
-					IsError: isError{true, "this nickname is already in use"},
+					IsError: isError{true, "this username is already in use"},
 				})
 				return
 
@@ -91,16 +93,13 @@ func (app *application) signup(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) signin(w http.ResponseWriter, r *http.Request) {
-
+func (app *Application) signin(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
-		user := models.User{
-			Email:    r.FormValue("email"),
-			Password: r.FormValue("password"),
-		}
-		// foundUser := &models.User{}
-		err := app.forum.LogInUser(&user)
+		info := r.FormValue("email")
+		password := r.FormValue("password")
+
+		err := app.Forum.PasswordCompare(info, password)
 		if err != nil {
 			fmt.Println(err.Error())
 			app.render(w, r, "signin.page.html", &templateData{
@@ -109,14 +108,11 @@ func (app *application) signin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		u, _ := app.forum.GetUserByEmail(user.Email)
+		u, _ := app.Forum.GetUserInfo(info)
 
-		// Create a new random session token
-		// we use the "github.com/google/uuid" library to generate UUIDs
-		sessionToken := uuid.NewString()
+		sessionToken := uuid.NewV4().String()
 		expiresAt := time.Now().Add(120 * time.Second)
 
-		// Set the token in the session map, along with the session information
 		session.Sessions[sessionToken] = session.Session{
 			ID:     u.ID,
 			Expiry: expiresAt,
@@ -126,7 +122,7 @@ func (app *application) signin(w http.ResponseWriter, r *http.Request) {
 			Value:   sessionToken,
 			Expires: expiresAt,
 		})
-		http.Redirect(w, r, "/user/profile", http.StatusSeeOther)
+		http.Redirect(w, r, fmt.Sprintf("/user?id=%v", session.Sessions[sessionToken].ID), http.StatusSeeOther)
 	case http.MethodGet:
 		app.render(w, r, "signin.page.html", &templateData{})
 	default:
@@ -137,29 +133,55 @@ func (app *application) signin(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) profile(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/user/profile" {
-		app.notFound(w)
-		return
-	}
+// func (app *Application) profile(w http.ResponseWriter, r *http.Request) {
+// 	if r.URL.Path != "/user/profile" {
+// 		app.notFound(w)
+// 		return
+// 	}
+// 	switch r.Method {
+// 	case http.MethodGet:
+// 		isSession, user_id := session.IsSession(r)
+// 		if isSession {
+// 			user, err := app.Forum.GetUserByID(user_id)
+// 			if err != nil {
+// 				app.clientError(w, http.StatusInternalServerError)
+// 				return
+// 			}
+// 			app.render(w, r, "profile.page.html", &templateData{
+// 				IsSession: isSession,
+// 				User:      user,
+// 			})
+// 			return
+// 		} else {
+// 			http.Redirect(w, r, "/signin", http.StatusSeeOther)
+// 			return
+// 		}
+// 	default:
+// 		w.Header().Set("Allow", http.MethodGet)
+// 		app.clientError(w, http.StatusMethodNotAllowed)
+// 		return
+// 	}
+// }
+
+func (app *Application) profile(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		isSession, user_id := session.IsSession(r)
-		if isSession {
-			user, err := app.forum.GetUserByID(user_id)
-			if err != nil {
-				app.clientError(w, http.StatusInternalServerError)
-				return
-			}
-			app.render(w, r, "profile.page.html", &templateData{
-				IsSession: isSession,
-				User:      user,
-			})
-			return
-		} else {
-			http.Redirect(w, r, "/signin", http.StatusSeeOther)
+		user_id, err := strconv.Atoi(r.URL.Query().Get("id"))
+		if err != nil || user_id < 1 {
+			app.notFound(w)
 			return
 		}
+		isSession, _ := session.IsSession(r)
+		user, err := app.Forum.GetUserByID(user_id)
+		if err != nil {
+			app.clientError(w, http.StatusInternalServerError)
+			return
+		}
+		app.render(w, r, "profile.page.html", &templateData{
+			IsSession: isSession,
+			User:      user,
+		})
+		return
 	default:
 		w.Header().Set("Allow", http.MethodGet)
 		app.clientError(w, http.StatusMethodNotAllowed)
@@ -167,7 +189,7 @@ func (app *application) profile(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) signout(w http.ResponseWriter, r *http.Request) {
+func (app *Application) signout(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		isSession, _ := session.IsSession(r)
@@ -185,22 +207,28 @@ func (app *application) signout(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) showPost(w http.ResponseWriter, r *http.Request) {
+func (app *Application) showPost(w http.ResponseWriter, r *http.Request) {
+	post_id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	if err != nil || post_id < 1 {
+		app.notFound(w)
+		return
+	}
 	switch r.Method {
 	case http.MethodGet:
+		var err error
 		isSession, user_id := session.IsSession(r)
-		id, err := strconv.Atoi(r.URL.Query().Get("id"))
-		if err != nil || id < 1 {
-			app.notFound(w)
-			return
+		var user *models.User
+		if isSession {
+			user, err = app.Forum.GetUserByID(user_id)
+			if err != nil {
+				app.clientError(w, http.StatusInternalServerError)
+				return
+			}
 		}
-		user, err := app.forum.GetUserByID(user_id)
+		post, err := app.Forum.GetPostByID(post_id)
 		if err != nil {
-			app.clientError(w, http.StatusInternalServerError)
-			return
-		}
-		post, err := app.forum.GetPostByID(id)
-		if err != nil {
+			fmt.Println("getPostByID fail")
+			fmt.Println(err.Error())
 			if errors.Is(err, models.ErrNoRecord) {
 				app.notFound(w)
 			} else {
@@ -208,24 +236,67 @@ func (app *application) showPost(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
+		fmt.Println("getPostByID success")
 
+		comments, err := app.Forum.GetCommentsByPostID(post_id)
+		if err != nil {
+			fmt.Println("GetCommentsByPostID fail")
+			fmt.Println(err.Error())
+			app.clientError(w, http.StatusInternalServerError)
+			return
+		}
+		fmt.Println("GetCommentsByPostID success")
 		// Используем помощника render() для отображения шаблона.
 		app.render(w, r, "post.page.html", &templateData{
 			IsSession: isSession,
-			Post:      post,
 			User:      user,
+			Post:      post,
+			Comments:  comments,
 		})
+	case http.MethodPost:
+
+		isSession, user_id := session.IsSession(r)
+		if isSession {
+			user, err := app.Forum.GetUserByID(user_id)
+			if err != nil {
+				fmt.Println(err.Error())
+				app.clientError(w, http.StatusInternalServerError)
+				return
+			}
+			fmt.Printf("MethodPost post_id = %v\n", post_id)
+			comment := models.Comment{
+				User_id: user.ID,
+				Post_id: post_id,
+				Content: r.FormValue("comment"),
+			}
+			if comment.Content == "" {
+				fmt.Println("Empty comment error")
+				app.clientError(w, http.StatusBadRequest)
+				return
+			}
+			err = app.Forum.AddComment(&comment)
+			if err != nil {
+				fmt.Println(err.Error())
+				app.clientError(w, http.StatusInternalServerError)
+				return
+			}
+
+			http.Redirect(w, r, fmt.Sprintf("/post?id=%d", post_id), http.StatusSeeOther)
+		}
+
 	default:
+		w.Header().Set("Allow", http.MethodGet)
+		app.clientError(w, http.StatusMethodNotAllowed)
 	}
 }
 
-func (app *application) createPost(w http.ResponseWriter, r *http.Request) {
+func (app *Application) createPost(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		isSession, user_id := session.IsSession(r)
 
 		if isSession {
-			user, err := app.forum.GetUserByID(user_id)
+			user, err := app.Forum.GetUserByID(user_id)
 			if err != nil {
 				app.clientError(w, http.StatusInternalServerError)
 				return
@@ -242,7 +313,7 @@ func (app *application) createPost(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		isSession, user_id := session.IsSession(r)
 		if isSession {
-			user, err := app.forum.GetUserByID(user_id)
+			user, err := app.Forum.GetUserByID(user_id)
 			if err != nil {
 				fmt.Println(err.Error())
 				app.clientError(w, http.StatusInternalServerError)
@@ -253,7 +324,7 @@ func (app *application) createPost(w http.ResponseWriter, r *http.Request) {
 				Title:   r.FormValue("title"),
 				Content: r.FormValue("content"),
 			}
-			id, err := app.forum.AddPost(&post)
+			id, err := app.Forum.AddPost(&post)
 			if err != nil {
 				fmt.Println(err.Error())
 				app.render(w, r, "createpost.page.html", &templateData{

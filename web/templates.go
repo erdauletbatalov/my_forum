@@ -1,17 +1,18 @@
-package main
+package web
 
 import (
 	"fmt"
-	"html/template" // новый импорт
-	"path/filepath" // новый импорт
+	"html/template"
+	"path/filepath"
 
-	"github.com/erdauletbatalov/forum.git/pkg/models"
+	"forum/pkg/models"
 )
 
 type templateData struct {
 	User      *models.User
 	Post      *models.Post
 	Posts     []*models.Post
+	Comments  []*models.Comment
 	IsError   isError
 	IsSession bool
 }
@@ -21,7 +22,7 @@ type isError struct {
 	Text  string
 }
 
-func newTemplateCache(dir string) (map[string]*template.Template, error) {
+func NewTemplateCache(dir string) (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
 
 	pages, err := filepath.Glob(filepath.Join(dir, "*.page.html"))

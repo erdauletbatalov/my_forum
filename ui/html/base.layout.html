@@ -34,12 +34,16 @@
   <body>
     <header>
       <h1><a href="/">Forum</a></h1>
+      <!-- {{if .IsSession}}
+      <signout><a href="/signout">Sign out</a></signout>
+      {{ end }} -->
     </header>
     <nav class="">
       <a href="/">home</a>
       {{if .IsSession}}
-      <a href="/user/profile">profile</a>
+      <a href="/user?id={{.User.ID}}">profile</a>
       <a href="/post/create">create post</a>
+      <a style="color: red" href="/signout">Sign out</a>
       {{ else }}
       <a href="/signup">sign up</a>
       <a href="/signin">sign in</a>
