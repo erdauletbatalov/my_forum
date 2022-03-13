@@ -30,3 +30,22 @@ CREATE TABLE IF NOT EXISTS "comment" (
     FOREIGN KEY (post_id)
     REFERENCES post(id)
 );
+
+-- comment TABLE --
+CREATE TABLE IF NOT EXISTS "vote" (
+  "id" INTEGER NOT NULL UNIQUE PRIMARY KEY AUTOINCREMENT,
+  "post_id" INTEGER NOT NULL,
+  "comment_id" INTEGER NOT NULL,
+  "user_id" INTEGER NOT NULL,
+  "vote_obj" INTEGER NOT NULL,
+  "vote_type" INTEGER NOT NULL,
+  CONSTRAINT fk_user
+    FOREIGN KEY (user_id)
+    REFERENCES user(id),
+  CONSTRAINT fk_post
+    FOREIGN KEY (post_id)
+    REFERENCES post(id),
+  CONSTRAINT fk_comment
+    FOREIGN KEY (comment_id)
+    REFERENCES comment(id)
+);

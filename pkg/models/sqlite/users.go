@@ -9,6 +9,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type ForumModel struct {
+	DB *sql.DB
+}
+
 func (m *ForumModel) AddUser(user *models.User) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 14)
 	if err != nil {

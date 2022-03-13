@@ -15,6 +15,9 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+const Post = 0
+const Comment = 0
+
 func main() {
 	addr := flag.String("addr", ":8080", "Сетевой адрес веб-сервера")
 	dsn := flag.String("dsn", "./forum.db", "Название SQLite3 источника данных")

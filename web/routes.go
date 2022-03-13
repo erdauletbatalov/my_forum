@@ -13,6 +13,8 @@ func (app *Application) Routes() *http.ServeMux {
 	mux.HandleFunc("/user", app.profile)
 	mux.HandleFunc("/post/create", app.createPost)
 	mux.HandleFunc("/post", app.showPost)
+	mux.HandleFunc("/post/rate", app.rate)
+	mux.HandleFunc("/post/comment", app.createComment)
 
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
