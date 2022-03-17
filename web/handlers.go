@@ -3,12 +3,11 @@ package web
 import (
 	"errors"
 	"fmt"
+	"forum/pkg/models"
+	"forum/pkg/session"
 	"net/http"
 	"strconv"
 	"time"
-
-	"forum/pkg/models"
-	"forum/pkg/session"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -21,29 +20,26 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		posts, err := app.Forum.GetAllPosts()
-		if err != nil {
-			fmt.Println(err.Error())
-			app.clientError(w, http.StatusInternalServerError)
-			return
-		}
 		isSession, user_id := session.IsSession(r)
+		var user *models.User
+		var err error
 		if isSession {
-			user, err := app.Forum.GetUserByID(user_id)
+			user, err = app.Forum.GetUserByID(user_id)
 			if err != nil {
 				fmt.Println(err.Error())
 				app.clientError(w, http.StatusInternalServerError)
 				return
 			}
-			app.render(w, r, "home.page.html", &templateData{
-				IsSession: isSession, //
-				User:      user,
-				Posts:     posts,
-			})
+		}
+		posts, err := app.Forum.GetAllPosts(user_id)
+		if err != nil {
+			fmt.Println(err.Error())
+			app.clientError(w, http.StatusInternalServerError)
 			return
 		}
 		app.render(w, r, "home.page.html", &templateData{
-			IsSession: isSession, //
+			IsSession: isSession,
+			User:      user,
 			Posts:     posts,
 		})
 
@@ -194,7 +190,7 @@ func (app *Application) showPost(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		post, err := app.Forum.GetPostByID(post_id)
+		post, err := app.Forum.GetPostByID(post_id, user_id)
 		if err != nil {
 			fmt.Println("getPostByID fail")
 			fmt.Println(err.Error())
@@ -351,7 +347,6 @@ func (app *Application) rate(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			vote_type, err := strconv.Atoi(r.FormValue("vote_type"))
-
 			if err != nil {
 				fmt.Println("vote_type err")
 				fmt.Println(err.Error())
@@ -361,19 +356,12 @@ func (app *Application) rate(w http.ResponseWriter, r *http.Request) {
 				app.clientError(w, http.StatusBadRequest)
 				return
 			}
-			vote_obj, err := strconv.Atoi(r.FormValue("vote_obj"))
-			if err != nil {
-				fmt.Println("vote_obj err")
-				app.clientError(w, http.StatusBadRequest)
-				return
-			}
 			fmt.Printf("MethodPost post_id = %v\n", post_id)
 			vote := models.Vote{
 				User_id:    user.ID,
 				Post_id:    post_id,
 				Comment_id: comment_id,
 				Vote_type:  vote_type,
-				Vote_obj:   vote_obj,
 			}
 			fmt.Println("entering GetVoteType")
 			vote_type, err = app.Forum.GetVoteType(&vote)

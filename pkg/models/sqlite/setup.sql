@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS "post" (
   "user_id" INTEGER NOT NULL,
   "title" TEXT NOT NULL UNIQUE,
   "content" TEXT NOT NULL,
+  "date" DATETIME NOT NULL,
   CONSTRAINT fk_user
     FOREIGN KEY (user_id)
     REFERENCES user(id)
@@ -37,7 +38,6 @@ CREATE TABLE IF NOT EXISTS "vote" (
   "post_id" INTEGER NOT NULL,
   "comment_id" INTEGER NOT NULL,
   "user_id" INTEGER NOT NULL,
-  "vote_obj" INTEGER NOT NULL,
   "vote_type" INTEGER NOT NULL,
   CONSTRAINT fk_user
     FOREIGN KEY (user_id)
@@ -49,3 +49,25 @@ CREATE TABLE IF NOT EXISTS "vote" (
     FOREIGN KEY (comment_id)
     REFERENCES comment(id)
 );
+
+-- tags TABLE
+CREATE TABLE IF NOT EXISTS "tag" (
+  "id" INTEGER NOT NULL UNIQUE PRIMARY KEY AUTOINCREMENT,
+  "name" TEXT NOT NULL UNIQUE
+);
+
+-- post-tag TABLE
+CREATE TABLE IF NOT EXISTS "post_tag" (
+  "id" INTEGER NOT NULL UNIQUE PRIMARY KEY AUTOINCREMENT,
+  "post_id" INTEGER NOT NULL,
+  "tag_id" INTEGER NOT NULL,
+  CONSTRAINT fk_post
+    FOREIGN KEY (post_id)
+    REFERENCES post(id),
+  CONSTRAINT fk_tag
+    FOREIGN KEY (tag_id)
+    REFERENCES tag(id)
+);
+
+
+

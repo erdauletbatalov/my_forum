@@ -43,7 +43,6 @@ func (m *ForumModel) GetCommentsByPostID(post_id int, user_id int) ([]*models.Co
 			return nil, err
 		}
 		vote := &models.Vote{
-			Vote_obj:   Comment,
 			Post_id:    post_id,
 			Comment_id: c.ID,
 			Vote_type:  Like,
@@ -52,10 +51,10 @@ func (m *ForumModel) GetCommentsByPostID(post_id int, user_id int) ([]*models.Co
 		if err != nil {
 			return nil, err
 		}
-		// checking if user liked
+		// checking if current user liked
 		var isLike bool
 		if user_id != 0 {
-			isLike, err = m.isVote(user_id, vote)
+			isLike, err = m.isVotedByUser(user_id, vote)
 			if err != nil {
 				return nil, err
 			}
@@ -69,7 +68,7 @@ func (m *ForumModel) GetCommentsByPostID(post_id int, user_id int) ([]*models.Co
 
 		var isDislike bool
 		if user_id != 0 {
-			isDislike, err = m.isVote(user_id, vote)
+			isDislike, err = m.isVotedByUser(user_id, vote)
 			if err != nil {
 				return nil, err
 			}

@@ -1,6 +1,9 @@
 package models
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 var ErrNoRecord = errors.New("models: подходящей записи не найдено")
 
@@ -14,13 +17,16 @@ type User struct {
 }
 
 type Post struct {
-	ID       int
-	User_id  int
-	Author   string
-	Title    string
-	Content  string
-	Likes    int
-	Dislikes int
+	ID        int
+	User_id   int
+	Author    string
+	Title     string
+	Content   string
+	Date      time.Time
+	Likes     int
+	Dislikes  int
+	IsLike    bool
+	IsDislike bool
 }
 
 type Comment struct {

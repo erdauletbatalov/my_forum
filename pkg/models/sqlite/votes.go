@@ -4,9 +4,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strconv"
-
 	"forum/pkg/models"
+	"strconv"
 )
 
 func (m *ForumModel) GetVoteType(vote *models.Vote) (int, error) {
@@ -14,10 +13,9 @@ func (m *ForumModel) GetVoteType(vote *models.Vote) (int, error) {
 									FROM "vote"
 									WHERE user_id = ?
 									AND post_id = ?
-									AND vote_obj = ?
-									And comment_id = ?`
+									AND comment_id = ?`
 
-	row := m.DB.QueryRow(stmt_select, vote.User_id, vote.Post_id, vote.Vote_obj, vote.Comment_id)
+	row := m.DB.QueryRow(stmt_select, vote.User_id, vote.Post_id, vote.Comment_id)
 
 	var vote_type int
 	err := row.Scan(&vote_type)
@@ -32,11 +30,10 @@ func (m *ForumModel) GetVoteType(vote *models.Vote) (int, error) {
 }
 
 func (m *ForumModel) AddVote(vote *models.Vote) error {
+	stmt_insert := `INSERT INTO "vote" ("post_id", "comment_id", "user_id", "vote_type") 
+									VALUES(?, ?, ?, ?)`
 
-	stmt_insert := `INSERT INTO "vote" ("post_id", "comment_id", "user_id", "vote_obj", "vote_type") 
-									VALUES(?, ?, ?, ?, ?)`
-
-	_, err := m.DB.Exec(stmt_insert, vote.Post_id, vote.Comment_id, vote.User_id, vote.Vote_obj, vote.Vote_type)
+	_, err := m.DB.Exec(stmt_insert, vote.Post_id, vote.Comment_id, vote.User_id, vote.Vote_type)
 	if err != nil {
 		fmt.Println(err.Error())
 		return err
@@ -49,8 +46,8 @@ func (m *ForumModel) DeleteVote(vote *models.Vote) error {
 	stmt_delete := `DELETE FROM "vote"
 									WHERE user_id = ?
 									AND post_id = ?
-									AND vote_obj = ?`
-	_, err := m.DB.Exec(stmt_delete, vote.User_id, vote.Post_id, vote.Vote_obj)
+									AND comment_id = ?`
+	_, err := m.DB.Exec(stmt_delete, vote.User_id, vote.Post_id, vote.Comment_id)
 	if err != nil {
 		fmt.Println(err.Error())
 		return err
@@ -62,14 +59,13 @@ func (m *ForumModel) DeleteVote(vote *models.Vote) error {
 func (m *ForumModel) GetVotes(vote *models.Vote) (int, error) {
 	stmt_select := `SELECT COUNT(id)
 									FROM vote
-									WHERE vote_obj = ?
-									AND vote_type = ?
+									WHERE vote_type = ?
 									AND post_id = ?
 									AND comment_id = ?`
 
 	var output string
-	row := m.DB.QueryRow(stmt_select, vote.Vote_obj, vote.Vote_type, vote.Post_id, vote.Comment_id)
-	fmt.Printf("searching %v, %v, %v, %v\n", vote.Vote_obj, vote.Vote_type, vote.Post_id, vote.Comment_id)
+	row := m.DB.QueryRow(stmt_select, vote.Vote_type, vote.Post_id, vote.Comment_id)
+	fmt.Printf("searching %v, %v, %v, %v\n", vote.Vote_type, vote.Post_id, vote.Comment_id)
 
 	err := row.Scan(&output)
 	// Catch errors
@@ -90,18 +86,17 @@ func (m *ForumModel) GetVotes(vote *models.Vote) (int, error) {
 	}
 }
 
-func (m *ForumModel) isVote(user_id int, vote *models.Vote) (bool, error) {
+func (m *ForumModel) isVotedByUser(user_id int, vote *models.Vote) (bool, error) {
 	stmt_select := `SELECT vote_type
 									FROM vote
-									WHERE vote_obj = ?
-									AND vote_type = ?
+									WHERE vote_type = ?
 									AND post_id = ?
 									AND comment_id = ?
 									AND user_id = ?`
 
 	var vote_type int
-	row := m.DB.QueryRow(stmt_select, vote.Vote_obj, vote.Vote_type, vote.Post_id, vote.Comment_id, user_id)
-	fmt.Printf("searching user by %v, %v, %v, %v\n", vote.Vote_obj, vote.Vote_type, vote.Post_id, vote.Comment_id, vote.User_id)
+	row := m.DB.QueryRow(stmt_select, vote.Vote_type, vote.Post_id, vote.Comment_id, user_id)
+	fmt.Printf("searching user by %v, %v, %v, %v\n", vote.Vote_type, vote.Post_id, vote.Comment_id, vote.User_id)
 
 	err := row.Scan(&vote_type)
 	// Catch errors
