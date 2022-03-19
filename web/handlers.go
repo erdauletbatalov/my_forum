@@ -7,6 +7,7 @@ import (
 	"forum/pkg/session"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
@@ -31,12 +32,42 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		posts, err := app.Forum.GetAllPosts(user_id)
-		if err != nil {
-			fmt.Println(err.Error())
-			app.clientError(w, http.StatusInternalServerError)
-			return
+		sortBy := r.URL.Query().Get("sort")
+		posts := []*models.Post{}
+		if strings.Compare(sortBy, "likes") == 0 {
+			fmt.Println("likes sortion processing")
+			posts, err = app.Forum.GetPostsSortedByLikes(user_id)
+			if err != nil {
+				fmt.Println(err.Error())
+				app.clientError(w, http.StatusInternalServerError)
+				return
+			}
+		} else if strings.Compare(sortBy, "date") == 0 {
+			fmt.Println("date sortion processing")
+			posts, err = app.Forum.GetPostsSortedByDate(user_id)
+			if err != nil {
+				fmt.Println(err.Error())
+				app.clientError(w, http.StatusInternalServerError)
+				return
+			}
+		} else if strings.Compare(sortBy, "tags") == 0 {
+			fmt.Println("tag sortion processing")
+			tag := r.URL.Query().Get("tag")
+			posts, err = app.Forum.GetPostsByTag(user_id, tag)
+			if err != nil {
+				fmt.Println(err.Error())
+				app.clientError(w, http.StatusInternalServerError)
+				return
+			}
+		} else {
+			posts, err = app.Forum.GetPosts(user_id)
+			if err != nil {
+				fmt.Println(err.Error())
+				app.clientError(w, http.StatusInternalServerError)
+				return
+			}
 		}
+
 		app.render(w, r, "home.page.html", &templateData{
 			IsSession: isSession,
 			User:      user,
@@ -53,7 +84,6 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 func (app *Application) signup(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
-		fmt.Println("POST!!!")
 		user := models.User{
 			Email:    r.FormValue("email"),
 			Password: r.FormValue("password"),
@@ -68,7 +98,6 @@ func (app *Application) signup(w http.ResponseWriter, r *http.Request) {
 				})
 				return
 			case "UNIQUE constraint failed: user.username":
-				fmt.Println("rendering username already in use")
 				app.render(w, r, "signup.page.html", &templateData{
 					IsError: isError{true, "this username is already in use"},
 				})
@@ -137,15 +166,35 @@ func (app *Application) profile(w http.ResponseWriter, r *http.Request) {
 			app.notFound(w)
 			return
 		}
-		isSession, _ := session.IsSession(r)
+		isSession, session_user_id := session.IsSession(r)
 		user, err := app.Forum.GetUserByID(user_id)
 		if err != nil {
 			app.clientError(w, http.StatusInternalServerError)
 			return
 		}
+
+		filter := r.URL.Query().Get("filter")
+		posts := []*models.Post{}
+		if strings.Compare(filter, "liked") == 0 {
+			posts, err = app.Forum.GetLikedUserPosts(session_user_id, user_id)
+			if err != nil {
+				fmt.Println(err.Error())
+				app.clientError(w, http.StatusInternalServerError)
+				return
+			}
+		} else if strings.Compare(filter, "posts") == 0 {
+			posts, err = app.Forum.GetUserPosts(session_user_id, user_id)
+			if err != nil {
+				fmt.Println(err.Error())
+				app.clientError(w, http.StatusInternalServerError)
+				return
+			}
+		}
+
 		app.render(w, r, "profile.page.html", &templateData{
 			IsSession: isSession,
 			User:      user,
+			Posts:     posts,
 		})
 		return
 	default:
@@ -192,7 +241,6 @@ func (app *Application) showPost(w http.ResponseWriter, r *http.Request) {
 		}
 		post, err := app.Forum.GetPostByID(post_id, user_id)
 		if err != nil {
-			fmt.Println("getPostByID fail")
 			fmt.Println(err.Error())
 			if errors.Is(err, models.ErrNoRecord) {
 				app.notFound(w)
@@ -201,17 +249,13 @@ func (app *Application) showPost(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
-		fmt.Println("getPostByID success")
-
 		comments, err := app.Forum.GetCommentsByPostID(post_id, user_id)
 		if err != nil {
-			fmt.Println("GetCommentsByPostID fail")
 			fmt.Println(err.Error())
 			app.clientError(w, http.StatusInternalServerError)
 			return
 		}
 
-		fmt.Println("GetCommentsByPostID success")
 		// Используем помощника render() для отображения шаблона.
 		app.render(w, r, "post.page.html", &templateData{
 			IsSession: isSession,
@@ -254,12 +298,15 @@ func (app *Application) createPost(w http.ResponseWriter, r *http.Request) {
 				app.clientError(w, http.StatusInternalServerError)
 				return
 			}
+			tagsStr := r.FormValue("tags")
+			tagsArr := strings.Split(tagsStr, " ")
 			post := models.Post{
 				User_id: user.ID,
 				Title:   r.FormValue("title"),
 				Content: r.FormValue("content"),
+				Tags:    tagsArr,
 			}
-			id, err := app.Forum.AddPost(&post)
+			post_id, err := app.Forum.AddPost(&post)
 			if err != nil {
 				fmt.Println(err.Error())
 				app.render(w, r, "createpost.page.html", &templateData{
@@ -270,7 +317,7 @@ func (app *Application) createPost(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			http.Redirect(w, r, fmt.Sprintf("/post?id=%d", id), http.StatusSeeOther)
+			http.Redirect(w, r, fmt.Sprintf("/post?id=%d", post_id), http.StatusSeeOther)
 		}
 	default:
 		w.Header().Set("Allow", http.MethodGet)
@@ -294,14 +341,12 @@ func (app *Application) createComment(w http.ResponseWriter, r *http.Request) {
 				app.clientError(w, http.StatusBadRequest)
 				return
 			}
-			fmt.Printf("MethodPost post_id = %v\n", post_id)
 			comment := models.Comment{
 				User_id: user.ID,
 				Post_id: post_id,
 				Content: r.FormValue("comment"),
 			}
 			if comment.Content == "" {
-				fmt.Println("Empty comment error")
 				app.clientError(w, http.StatusBadRequest)
 				return
 			}
@@ -323,11 +368,8 @@ func (app *Application) createComment(w http.ResponseWriter, r *http.Request) {
 func (app *Application) rate(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
-		fmt.Println("entering rate handler")
 		isSession, user_id := session.IsSession(r)
 		if isSession {
-			fmt.Println("entering rate handler, you are loged in")
-
 			user, err := app.Forum.GetUserByID(user_id)
 			if err != nil {
 				fmt.Println(err.Error())
@@ -336,19 +378,16 @@ func (app *Application) rate(w http.ResponseWriter, r *http.Request) {
 			}
 			post_id, err := strconv.Atoi(r.FormValue("post_id"))
 			if err != nil || post_id < 1 {
-				fmt.Println("post_id err")
 				app.clientError(w, http.StatusBadRequest)
 				return
 			}
 			comment_id, err := strconv.Atoi(r.FormValue("comment_id"))
 			if err != nil {
-				fmt.Println("comment_id err")
 				app.clientError(w, http.StatusBadRequest)
 				return
 			}
 			vote_type, err := strconv.Atoi(r.FormValue("vote_type"))
 			if err != nil {
-				fmt.Println("vote_type err")
 				fmt.Println(err.Error())
 				app.clientError(w, http.StatusBadRequest)
 				return
@@ -356,26 +395,20 @@ func (app *Application) rate(w http.ResponseWriter, r *http.Request) {
 				app.clientError(w, http.StatusBadRequest)
 				return
 			}
-			fmt.Printf("MethodPost post_id = %v\n", post_id)
 			vote := models.Vote{
 				User_id:    user.ID,
 				Post_id:    post_id,
 				Comment_id: comment_id,
 				Vote_type:  vote_type,
 			}
-			fmt.Println("entering GetVoteType")
 			vote_type, err = app.Forum.GetVoteType(&vote)
 			if err != nil {
-				fmt.Println("GetVoteType error")
 				fmt.Println(err.Error())
 				app.clientError(w, http.StatusInternalServerError)
 				return
 			}
-			fmt.Println("GetVoteType success, vote type:")
-			fmt.Println(vote_type)
 			switch vote_type {
 			case 0: // there is no votes yet
-				fmt.Println("entering AddVote")
 				err = app.Forum.AddVote(&vote)
 				if err != nil {
 					fmt.Println(err.Error())

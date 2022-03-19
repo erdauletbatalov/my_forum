@@ -22,6 +22,7 @@ type Post struct {
 	Author    string
 	Title     string
 	Content   string
+	Tags      []string
 	Date      time.Time
 	Likes     int
 	Dislikes  int
@@ -48,4 +49,10 @@ type Vote struct {
 	Comment_id int
 	Vote_obj   int
 	Vote_type  int
+}
+
+type Tag struct {
+	ID      int
+	Post_id int
+	Name    string
 }

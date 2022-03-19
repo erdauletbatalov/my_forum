@@ -4,6 +4,9 @@
   <h2>Title: {{ .Post.Title }}</h2>
   <h2>Content: {{ .Post.Content }}</h2>
   <h2>Creation date: {{ .Post.Date.Format "02 Jan 06 15:04"}}</h2>
+  {{range .Post.Tags}} 
+  <a href="/">{{.}}</a>
+  {{end}}
 </content>
 <!-- Post's likes -->
 <div class="row">

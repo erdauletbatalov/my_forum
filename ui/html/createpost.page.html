@@ -25,6 +25,18 @@
     ></textarea>
     <label for="floatingInput">Content</label>
   </div>
+  <!-- Tags -->
+  <div class="form-floating">
+    <input
+      type="text"
+      class="form-control"
+      id="tags"
+      name="tags"
+      placeholder="Enter your tags with spaces"
+    />
+    <label for="floatingInput">Title</label>
+  </div>
+
   {{if .IsError.Error}}
   <div>
     <label>{{.IsError.Text}}</label>

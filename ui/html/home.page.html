@@ -6,6 +6,7 @@
 <h2>Home page</h2>
 <h2>All Posts:</h2>
 {{end}} {{if .Posts}} {{range .Posts}}
+<h2>Sort by: <a href="?sort=likes">Likes</a><span> or </span><a href="?sort=date">Date</a><span> or </span><a href="?sort=tags&tag=anime">Tag</a></h2>
 <content>
   <h2>Author: <a href="user?id={{.User_id}}">{{ .Author }}</a></h2>
   <h2>Title: <a href="post?id={{.ID}}">{{ .Title }}</a></h2>
