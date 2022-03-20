@@ -66,6 +66,31 @@ func (m *ForumModel) GetTagsByPostID(post_id int) ([]string, error) {
 	return tags, nil
 }
 
+func (m *ForumModel) GetTags() ([]string, error) {
+	stmt := `SELECT tag.name
+					FROM tag`
+
+	rows, err := m.DB.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var tags []string
+	count := 0
+	for rows.Next() {
+		var tag string
+
+		fmt.Println(count)
+		count++
+		err = rows.Scan(&tag)
+		if err != nil {
+			return nil, err
+		}
+		tags = append(tags, tag)
+	}
+	return tags, nil
+}
+
 func (m *ForumModel) getTagID(tag *models.Tag) (int, error) {
 	var tag_id int
 	stmtSelect := `SELECT ("id")

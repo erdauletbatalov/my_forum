@@ -1,17 +1,27 @@
 {{template "base" .}} {{define "title"}}Forum main page{{end}} {{define "main"}}
 {{if .IsSession}}
 <h2>Welcome {{ .User.Email }}</h2>
-<h2>All Posts:</h2>
+<h2>Posts:</h2>
 {{else}}
-<h2>Home page</h2>
-<h2>All Posts:</h2>
-{{end}} {{if .Posts}} {{range .Posts}}
-<h2>Sort by: <a href="?sort=likes">Likes</a><span> or </span><a href="?sort=date">Date</a><span> or </span><a href="?sort=tags&tag=anime">Tag</a></h2>
+<h2>Posts:</h2>
+{{end}} {{if .Posts}} 
+<h2>Sort by: <a href="?sort=likes">Likes</a><span> or </span><a href="?sort=date">Date</a><span> or </span><a style="color: green;" type="button" data-toggle="modal" data-target="#exampleModal">
+  Tag
+</a></h2>
+{{range .Posts}}
 <content>
   <h2>Author: <a href="user?id={{.User_id}}">{{ .Author }}</a></h2>
   <h2>Title: <a href="post?id={{.ID}}">{{ .Title }}</a></h2>
   <p>Content: {{ .Content }}</p>
   <p>Creation date: {{ .Date.Format "02 Jan 06 15:04" }}</p>
+  <p>Tags: 
+    {{if .Tags}}
+    {{range .Tags}}
+    <a href="/?sort=tags&tag={{ . }}">{{ . }}</a><span> </span>
+    {{end}}
+    {{else}}
+    None... 
+    {{end}}</p>
 </content>
 <!-- Post's likes -->
 <div class="row">
@@ -96,3 +106,29 @@
 {{end}} {{ else }}
 <p>Здесь ничего нет... пока что!</p>
 {{end}} {{end}}
+
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Sort posts by:</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        {{if .Tags}}
+        {{range .Tags}}
+        <p>
+          <a href="/?sort=tags&tag={{.}}">{{.}}</a>
+        </p>
+        {{end}}
+        {{else}}
+        No tags...
+        {{end}}
+      </div>
+    </div>
+  </div>
+</div>

@@ -4,9 +4,14 @@
   <h2>Title: {{ .Post.Title }}</h2>
   <h2>Content: {{ .Post.Content }}</h2>
   <h2>Creation date: {{ .Post.Date.Format "02 Jan 06 15:04"}}</h2>
-  {{range .Post.Tags}} 
-  <a href="/">{{.}}</a>
-  {{end}}
+  <p>Tags: 
+    {{if .Post.Tags}}
+    {{range .Post.Tags}}
+    <a href="/?sort=tags&tag={{ . }}">{{ . }}</a><span> </span>
+    {{end}}
+    {{else}}
+    None... 
+    {{end}}</p>
 </content>
 <!-- Post's likes -->
 <div class="row">
@@ -101,7 +106,7 @@
     ></textarea>
     <label for="floatingInput">Comment</label>
   </div>
-  <input type="text" name="post_id" hidden value="{{.Post.ID}}" />
+  <input type="text" name="post_id" hidden value="{{.Post.ID}}" required />
   <button class="w-25 btn btn-lg btn-primary" type="submit">Add</button>
 </form>
 {{end}}

@@ -12,6 +12,7 @@ type templateData struct {
 	User      *models.User
 	Post      *models.Post
 	Posts     []*models.Post
+	Tags      []string
 	Comments  []*models.Comment
 	IsError   isError
 	IsSession bool

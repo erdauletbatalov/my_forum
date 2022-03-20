@@ -10,6 +10,7 @@
       id="floatingInput"
       name="title"
       placeholder="title"
+      required
     />
     <label for="floatingInput">Title</label>
   </div>
@@ -22,7 +23,8 @@
       id="content"
       name="content"
       placeholder="Content"
-    ></textarea>
+      required
+      ></textarea>
     <label for="floatingInput">Content</label>
   </div>
   <!-- Tags -->
@@ -33,8 +35,9 @@
       id="tags"
       name="tags"
       placeholder="Enter your tags with spaces"
+      required
     />
-    <label for="floatingInput">Title</label>
+    <label for="floatingInput">Tags</label>
   </div>
 
   {{if .IsError.Error}}

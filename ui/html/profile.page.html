@@ -14,6 +14,14 @@
   <h2>Title: <a href="post?id={{.ID}}">{{ .Title }}</a></h2>
   <p>Content: {{ .Content }}</p>
   <p>Creation date: {{ .Date.Format "02 Jan 06 15:04" }}</p>
+  <p>Tags: 
+    {{if .Tags}}
+    {{range .Tags}}
+    <a href="/?sort=tags&tag={{ . }}">{{ . }}</a><span> </span>
+    {{end}}
+    {{else}}
+    None... 
+    {{end}}</p>
 </content>
 <!-- Post's likes -->
 <div class="row">

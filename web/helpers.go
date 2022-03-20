@@ -3,6 +3,8 @@ package web
 import (
 	"fmt"
 	"net/http"
+	"net/mail"
+	"regexp"
 	"runtime/debug"
 )
 
@@ -44,4 +46,31 @@ func (app *Application) render(w http.ResponseWriter, r *http.Request, name stri
 	if err != nil {
 		app.serverError(w, err)
 	}
+}
+
+func validEmail(email string) bool {
+	_, err := mail.ParseAddress(email)
+	return err == nil
+}
+
+func validTags(tags []string) bool {
+	re := regexp.MustCompile("^[a-zA-Z0-9_]*$")
+	for _, val := range tags {
+		if re.FindStringSubmatch(val) == nil {
+			return false
+		}
+	}
+	return true
+}
+
+func unique(stringSlice []string) []string {
+	keys := make(map[string]bool)
+	list := []string{}
+	for _, entry := range stringSlice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
 }

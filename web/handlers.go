@@ -1,6 +1,7 @@
 package web
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"forum/pkg/models"
@@ -28,7 +29,7 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 			user, err = app.Forum.GetUserByID(user_id)
 			if err != nil {
 				fmt.Println(err.Error())
-				app.clientError(w, http.StatusInternalServerError)
+				app.serverError(w, err)
 				return
 			}
 		}
@@ -39,7 +40,7 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 			posts, err = app.Forum.GetPostsSortedByLikes(user_id)
 			if err != nil {
 				fmt.Println(err.Error())
-				app.clientError(w, http.StatusInternalServerError)
+				app.serverError(w, err)
 				return
 			}
 		} else if strings.Compare(sortBy, "date") == 0 {
@@ -47,7 +48,7 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 			posts, err = app.Forum.GetPostsSortedByDate(user_id)
 			if err != nil {
 				fmt.Println(err.Error())
-				app.clientError(w, http.StatusInternalServerError)
+				app.serverError(w, err)
 				return
 			}
 		} else if strings.Compare(sortBy, "tags") == 0 {
@@ -56,22 +57,30 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 			posts, err = app.Forum.GetPostsByTag(user_id, tag)
 			if err != nil {
 				fmt.Println(err.Error())
-				app.clientError(w, http.StatusInternalServerError)
+				app.serverError(w, err)
 				return
 			}
 		} else {
 			posts, err = app.Forum.GetPosts(user_id)
 			if err != nil {
 				fmt.Println(err.Error())
-				app.clientError(w, http.StatusInternalServerError)
+				app.serverError(w, err)
 				return
 			}
+		}
+
+		tags, err := app.Forum.GetTags()
+		if err != nil {
+			fmt.Println(err.Error())
+			app.serverError(w, err)
+			return
 		}
 
 		app.render(w, r, "home.page.html", &templateData{
 			IsSession: isSession,
 			User:      user,
 			Posts:     posts,
+			Tags:      tags,
 		})
 
 	default:
@@ -88,6 +97,10 @@ func (app *Application) signup(w http.ResponseWriter, r *http.Request) {
 			Email:    r.FormValue("email"),
 			Password: r.FormValue("password"),
 			Username: r.FormValue("nickname"),
+		}
+		if !validEmail(user.Email) || user.Password == "" || user.Username == "" {
+			app.clientError(w, http.StatusBadRequest)
+			return
 		}
 		err := app.Forum.AddUser(&user)
 		if err != nil {
@@ -158,52 +171,6 @@ func (app *Application) signin(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *Application) profile(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		user_id, err := strconv.Atoi(r.URL.Query().Get("id"))
-		if err != nil || user_id < 1 {
-			app.notFound(w)
-			return
-		}
-		isSession, session_user_id := session.IsSession(r)
-		user, err := app.Forum.GetUserByID(user_id)
-		if err != nil {
-			app.clientError(w, http.StatusInternalServerError)
-			return
-		}
-
-		filter := r.URL.Query().Get("filter")
-		posts := []*models.Post{}
-		if strings.Compare(filter, "liked") == 0 {
-			posts, err = app.Forum.GetLikedUserPosts(session_user_id, user_id)
-			if err != nil {
-				fmt.Println(err.Error())
-				app.clientError(w, http.StatusInternalServerError)
-				return
-			}
-		} else if strings.Compare(filter, "posts") == 0 {
-			posts, err = app.Forum.GetUserPosts(session_user_id, user_id)
-			if err != nil {
-				fmt.Println(err.Error())
-				app.clientError(w, http.StatusInternalServerError)
-				return
-			}
-		}
-
-		app.render(w, r, "profile.page.html", &templateData{
-			IsSession: isSession,
-			User:      user,
-			Posts:     posts,
-		})
-		return
-	default:
-		w.Header().Set("Allow", http.MethodGet)
-		app.clientError(w, http.StatusMethodNotAllowed)
-		return
-	}
-}
-
 func (app *Application) signout(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -215,6 +182,56 @@ func (app *Application) signout(w http.ResponseWriter, r *http.Request) {
 		}
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 
+	default:
+		w.Header().Set("Allow", http.MethodGet)
+		app.clientError(w, http.StatusMethodNotAllowed)
+		return
+	}
+}
+
+func (app *Application) profile(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		user_id, err := strconv.Atoi(r.URL.Query().Get("id"))
+		if err != nil || user_id < 1 {
+			app.notFound(w)
+			return
+		}
+		isSession, session_user_id := session.IsSession(r)
+		user, err := app.Forum.GetUserByID(user_id)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				app.notFound(w)
+				return
+			}
+			app.serverError(w, err)
+			return
+		}
+
+		filter := r.URL.Query().Get("filter")
+		posts := []*models.Post{}
+		if strings.Compare(filter, "liked") == 0 {
+			posts, err = app.Forum.GetLikedUserPosts(session_user_id, user_id)
+			if err != nil {
+				fmt.Println(err.Error())
+				app.serverError(w, err)
+				return
+			}
+		} else if strings.Compare(filter, "posts") == 0 {
+			posts, err = app.Forum.GetUserPosts(session_user_id, user_id)
+			if err != nil {
+				fmt.Println(err.Error())
+				app.serverError(w, err)
+				return
+			}
+		}
+
+		app.render(w, r, "profile.page.html", &templateData{
+			IsSession: isSession,
+			User:      user,
+			Posts:     posts,
+		})
+		return
 	default:
 		w.Header().Set("Allow", http.MethodGet)
 		app.clientError(w, http.StatusMethodNotAllowed)
@@ -235,7 +252,7 @@ func (app *Application) showPost(w http.ResponseWriter, r *http.Request) {
 		if isSession {
 			user, err = app.Forum.GetUserByID(user_id)
 			if err != nil {
-				app.clientError(w, http.StatusInternalServerError)
+				app.serverError(w, err)
 				return
 			}
 		}
@@ -252,7 +269,7 @@ func (app *Application) showPost(w http.ResponseWriter, r *http.Request) {
 		comments, err := app.Forum.GetCommentsByPostID(post_id, user_id)
 		if err != nil {
 			fmt.Println(err.Error())
-			app.clientError(w, http.StatusInternalServerError)
+			app.serverError(w, err)
 			return
 		}
 
@@ -277,7 +294,7 @@ func (app *Application) createPost(w http.ResponseWriter, r *http.Request) {
 		if isSession {
 			user, err := app.Forum.GetUserByID(user_id)
 			if err != nil {
-				app.clientError(w, http.StatusInternalServerError)
+				app.serverError(w, err)
 				return
 			}
 			app.render(w, r, "createpost.page.html", &templateData{
@@ -295,7 +312,7 @@ func (app *Application) createPost(w http.ResponseWriter, r *http.Request) {
 			user, err := app.Forum.GetUserByID(user_id)
 			if err != nil {
 				fmt.Println(err.Error())
-				app.clientError(w, http.StatusInternalServerError)
+				app.serverError(w, err)
 				return
 			}
 			tagsStr := r.FormValue("tags")
@@ -306,17 +323,31 @@ func (app *Application) createPost(w http.ResponseWriter, r *http.Request) {
 				Content: r.FormValue("content"),
 				Tags:    tagsArr,
 			}
-			post_id, err := app.Forum.AddPost(&post)
-			if err != nil {
-				fmt.Println(err.Error())
-				app.render(w, r, "createpost.page.html", &templateData{
-					IsSession: isSession,
-					IsError:   isError{true, err.Error()},
-					User:      user,
-				})
+			if post.Title == "" || post.Content == "" {
+				app.clientError(w, http.StatusBadRequest)
 				return
 			}
+			post.Tags = unique(post.Tags)
+			if !validTags(post.Tags) {
+				app.render(w, r, "createpost.page.html", &templateData{
+					IsSession: isSession,
+					IsError:   isError{true, "terrible tags!!!"},
+					User:      user,
+				})
+			}
+			if len(post.Tags) > 6 {
+				app.render(w, r, "createpost.page.html", &templateData{
+					IsSession: isSession,
+					IsError:   isError{true, "more than 6 tags are forbidden"},
+					User:      user,
+				})
+			}
 
+			post_id, err := app.Forum.AddPost(&post)
+			if err != nil {
+				app.serverError(w, err)
+				return
+			}
 			http.Redirect(w, r, fmt.Sprintf("/post?id=%d", post_id), http.StatusSeeOther)
 		}
 	default:
@@ -333,12 +364,12 @@ func (app *Application) createComment(w http.ResponseWriter, r *http.Request) {
 			user, err := app.Forum.GetUserByID(user_id)
 			if err != nil {
 				fmt.Println(err.Error())
-				app.clientError(w, http.StatusInternalServerError)
+				app.serverError(w, err)
 				return
 			}
 			post_id, err := strconv.Atoi(r.FormValue("post_id"))
 			if err != nil || post_id < 1 {
-				app.clientError(w, http.StatusBadRequest)
+				app.serverError(w, err)
 				return
 			}
 			comment := models.Comment{
@@ -353,7 +384,7 @@ func (app *Application) createComment(w http.ResponseWriter, r *http.Request) {
 			err = app.Forum.AddComment(&comment)
 			if err != nil {
 				fmt.Println(err.Error())
-				app.clientError(w, http.StatusInternalServerError)
+				app.serverError(w, err)
 				return
 			}
 
@@ -373,7 +404,7 @@ func (app *Application) rate(w http.ResponseWriter, r *http.Request) {
 			user, err := app.Forum.GetUserByID(user_id)
 			if err != nil {
 				fmt.Println(err.Error())
-				app.clientError(w, http.StatusInternalServerError)
+				app.serverError(w, err)
 				return
 			}
 			post_id, err := strconv.Atoi(r.FormValue("post_id"))
@@ -404,7 +435,7 @@ func (app *Application) rate(w http.ResponseWriter, r *http.Request) {
 			vote_type, err = app.Forum.GetVoteType(&vote)
 			if err != nil {
 				fmt.Println(err.Error())
-				app.clientError(w, http.StatusInternalServerError)
+				app.serverError(w, err)
 				return
 			}
 			switch vote_type {
@@ -412,7 +443,7 @@ func (app *Application) rate(w http.ResponseWriter, r *http.Request) {
 				err = app.Forum.AddVote(&vote)
 				if err != nil {
 					fmt.Println(err.Error())
-					app.clientError(w, http.StatusInternalServerError)
+					app.serverError(w, err)
 					return
 				}
 			case 1: // there is Like
@@ -420,20 +451,20 @@ func (app *Application) rate(w http.ResponseWriter, r *http.Request) {
 					err = app.Forum.DeleteVote(&vote)
 					if err != nil {
 						fmt.Println(err.Error())
-						app.clientError(w, http.StatusInternalServerError)
+						app.serverError(w, err)
 						return
 					}
 				} else { // like when there is no like
 					err = app.Forum.DeleteVote(&vote)
 					if err != nil {
 						fmt.Println(err.Error())
-						app.clientError(w, http.StatusInternalServerError)
+						app.serverError(w, err)
 						return
 					}
 					err = app.Forum.AddVote(&vote)
 					if err != nil {
 						fmt.Println(err.Error())
-						app.clientError(w, http.StatusInternalServerError)
+						app.serverError(w, err)
 						return
 					}
 				}
@@ -442,26 +473,26 @@ func (app *Application) rate(w http.ResponseWriter, r *http.Request) {
 					err = app.Forum.DeleteVote(&vote)
 					if err != nil {
 						fmt.Println(err.Error())
-						app.clientError(w, http.StatusInternalServerError)
+						app.serverError(w, err)
 						return
 					}
 				} else { // dislike when there is no dislike
 					err = app.Forum.DeleteVote(&vote)
 					if err != nil {
 						fmt.Println(err.Error())
-						app.clientError(w, http.StatusInternalServerError)
+						app.serverError(w, err)
 						return
 					}
 					err = app.Forum.AddVote(&vote)
 					if err != nil {
 						fmt.Println(err.Error())
-						app.clientError(w, http.StatusInternalServerError)
+						app.serverError(w, err)
 						return
 					}
 				}
 			default: // Post rate
 				fmt.Println(err.Error())
-				app.clientError(w, http.StatusInternalServerError)
+				app.serverError(w, err)
 			}
 
 			http.Redirect(w, r, fmt.Sprintf("/post?id=%d", post_id), http.StatusSeeOther)

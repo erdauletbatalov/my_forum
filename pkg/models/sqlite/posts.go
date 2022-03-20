@@ -19,9 +19,6 @@ func (m *ForumModel) AddPost(post *models.Post) (int, error) {
 	VALUES(?, ?, ?, ?)`
 
 	tag := &models.Tag{}
-	if len(post.Tags) > 6 {
-		return 0, fmt.Errorf("more than 6 tags are forbidden")
-	}
 
 	result, err := m.DB.Exec(stmt, post.User_id, post.Title, post.Content, time.Now())
 	if err != nil {
@@ -132,6 +129,14 @@ func (m *ForumModel) GetPosts(user_id int) ([]*models.Post, error) {
 			return nil, err
 		}
 
+		tags, err := m.GetTagsByPostID(p.ID)
+		fmt.Println(tags)
+		if err != nil {
+			return nil, err
+		}
+
+		p.Tags = tags
+
 		vote := &models.Vote{
 			Post_id:    p.ID,
 			Comment_id: 0,
@@ -198,6 +203,14 @@ func (m *ForumModel) GetUserPosts(session_user_id int, by_user_id int) ([]*model
 		if err != nil {
 			return nil, err
 		}
+
+		tags, err := m.GetTagsByPostID(p.ID)
+		fmt.Println(tags)
+		if err != nil {
+			return nil, err
+		}
+
+		p.Tags = tags
 
 		vote := &models.Vote{
 			Post_id:    p.ID,
@@ -269,6 +282,14 @@ func (m *ForumModel) GetLikedUserPosts(session_user_id int, by_user int) ([]*mod
 		if err != nil {
 			return nil, err
 		}
+
+		tags, err := m.GetTagsByPostID(p.ID)
+		fmt.Println(tags)
+		if err != nil {
+			return nil, err
+		}
+
+		p.Tags = tags
 
 		vote := &models.Vote{
 			Post_id:    p.ID,
@@ -342,6 +363,14 @@ func (m *ForumModel) GetPostsSortedByLikes(user_id int) ([]*models.Post, error) 
 			return nil, err
 		}
 
+		tags, err := m.GetTagsByPostID(p.ID)
+		fmt.Println(tags)
+		if err != nil {
+			return nil, err
+		}
+
+		p.Tags = tags
+
 		vote := &models.Vote{
 			Post_id:    p.ID,
 			Comment_id: 0,
@@ -413,6 +442,14 @@ func (m *ForumModel) GetPostsSortedByDate(user_id int) ([]*models.Post, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		tags, err := m.GetTagsByPostID(p.ID)
+		fmt.Println(tags)
+		if err != nil {
+			return nil, err
+		}
+
+		p.Tags = tags
 
 		vote := &models.Vote{
 			Post_id:    p.ID,
@@ -488,6 +525,14 @@ func (m *ForumModel) GetPostsByTag(user_id int, tag_name string) ([]*models.Post
 		if err != nil {
 			return nil, err
 		}
+
+		tags, err := m.GetTagsByPostID(p.ID)
+		fmt.Println(tags)
+		if err != nil {
+			return nil, err
+		}
+
+		p.Tags = tags
 
 		vote := &models.Vote{
 			Post_id:    p.ID,
