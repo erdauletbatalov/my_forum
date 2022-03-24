@@ -13,7 +13,6 @@ import (
 func (app *Application) serverError(w http.ResponseWriter, err error) {
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
 	app.ErrorLog.Output(2, trace)
-	// app.errorLog.Println(trace)
 
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
@@ -56,7 +55,7 @@ func validEmail(email string) bool {
 func validTags(tags []string) bool {
 	re := regexp.MustCompile("^[a-zA-Z0-9_]*$")
 	for _, val := range tags {
-		if re.FindStringSubmatch(val) == nil {
+		if re.FindStringSubmatch(val) == nil || !validInputStr(val) {
 			return false
 		}
 	}
@@ -73,4 +72,20 @@ func unique(stringSlice []string) []string {
 		}
 	}
 	return list
+}
+
+func validInputStr(str string) bool {
+	runes := []rune(str)
+	if len(runes) < 3 || len(runes) > 30 {
+		return false
+	}
+	return true
+}
+
+func validContent(str string) bool {
+	runes := []rune(str)
+	if len(runes) < 3 || len(runes) > 10000 {
+		return false
+	}
+	return true
 }
