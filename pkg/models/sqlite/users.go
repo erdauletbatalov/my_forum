@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"forum/pkg/models"
+	"github.com/erdauletbatalov/forum/pkg/models"
 
 	"golang.org/x/crypto/bcrypt"
 )

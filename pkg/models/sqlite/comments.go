@@ -2,7 +2,8 @@ package sqlite
 
 import (
 	"fmt"
-	"forum/pkg/models"
+
+	"github.com/erdauletbatalov/forum/pkg/models"
 )
 
 const Post = 0

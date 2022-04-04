@@ -109,13 +109,13 @@ This project will help you learn about:
 ### Run go files:
   1. Write to the terminal `make run`
   2. Open the browser
-  3. in the address bar, write `localhost:27960`
+  3. in the address bar, write `localhost:8080`
 
 ### Run docker:
   #### Attention: you must have docker compose installed
   1. Write to the terminal `make docker`
   2. Open the browser
-  3. in the address bar, write `localhost:27969`
+  3. in the address bar, write `localhost:8081`
 
 </details>
 
@@ -125,7 +125,7 @@ This project will help you learn about:
   1. Write to the terminal `make build`
   2. Write to the terminal `./bin/main`
   3. Open the browser
-  4. in the address bar, write `localhost:27960`
+  4. in the address bar, write `localhost:8080`
 
 </details>
 
@@ -173,6 +173,7 @@ This project will help you learn about:
 *Category* feature as per project requirements has been replaced by *tags* features (to be able adding any tags)
 
 ## Where to view commits
-All commits can be viewed here https://github.com/Li-Khan/forum
+All commits can be viewed here https://github.com/erdauletbatalov/forum
+Most commits are in https://git.01.alem.school/erdauletbatalov/forum
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/Li-Khan/forum)](https://goreportcard.com/report/github.com/Li-Khan/forum)
+[![Go Report Card](https://goreportcard.com/badge/github.com/erdauletbatalov/forum)](https://goreportcard.com/report/github.com/erdauletbatalov/forum)

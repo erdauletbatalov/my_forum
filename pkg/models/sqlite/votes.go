@@ -3,8 +3,9 @@ package sqlite
 import (
 	"database/sql"
 	"errors"
-	"forum/pkg/models"
 	"strconv"
+
+	"github.com/erdauletbatalov/forum/pkg/models"
 )
 
 func (m *ForumModel) GetVoteType(vote *models.Vote) (int, error) {

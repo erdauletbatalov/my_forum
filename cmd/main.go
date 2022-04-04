@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"os"
 
-	"forum/pkg/models/sqlite"
-	"forum/web"
+	"github.com/erdauletbatalov/forum/pkg/models/sqlite"
+	"github.com/erdauletbatalov/forum/web"
 
 	_ "github.com/mattn/go-sqlite3"
 )

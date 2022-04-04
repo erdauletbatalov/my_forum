@@ -4,12 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"forum/pkg/models"
-	"forum/pkg/session"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/erdauletbatalov/forum/pkg/models"
+	"github.com/erdauletbatalov/forum/pkg/session"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -132,7 +133,7 @@ func (app *Application) signin(w http.ResponseWriter, r *http.Request) {
 		info := strings.TrimSpace(r.FormValue("email"))
 		password := strings.TrimSpace(r.FormValue("password"))
 
-		if info == "" || password=="" {
+		if info == "" || password == "" {
 			app.clientError(w, http.StatusBadRequest)
 			return
 		}
@@ -314,12 +315,11 @@ func (app *Application) createPost(w http.ResponseWriter, r *http.Request) {
 			title := strings.TrimSpace(r.FormValue("title"))
 			content := strings.TrimSpace(r.FormValue("content"))
 
-			if tagsStr == "" || title=="" || content=="" {
+			if tagsStr == "" || title == "" || content == "" {
 				app.clientError(w, http.StatusBadRequest)
 				return
 			}
-	
-			
+
 			if !validInputStr(title) {
 				app.render(w, r, "createpost.page.html", &templateData{
 					IsSession: isSession,

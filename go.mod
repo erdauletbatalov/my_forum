@@ -1,4 +1,4 @@
-module forum
+module github.com/erdauletbatalov/forum
 
 go 1.17
 

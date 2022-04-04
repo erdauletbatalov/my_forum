@@ -21,7 +21,7 @@ docker:
 	@echo "Running server:"
 	@echo "\n***************************"
 	@echo "*                         *"
-	@echo "* http://localhost:27969/ *"
+	@echo "* http://localhost:8081/ *"
 	@echo "*                         *"
 	@echo "***************************\n"
 

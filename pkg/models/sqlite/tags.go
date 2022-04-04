@@ -3,7 +3,8 @@ package sqlite
 import (
 	"database/sql"
 	"errors"
-	"forum/pkg/models"
+
+	"github.com/erdauletbatalov/forum/pkg/models"
 )
 
 func (m *ForumModel) AddTag(tag *models.Tag) error {

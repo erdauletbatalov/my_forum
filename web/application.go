@@ -4,7 +4,7 @@ import (
 	"html/template"
 	"log"
 
-	"forum/pkg/models/sqlite"
+	"github.com/erdauletbatalov/forum/pkg/models/sqlite"
 )
 
 type Application struct {
