@@ -1,0 +1,50 @@
+{{template "base" .}} {{define "title"}}Forum main page{{end}} {{define "main"}}
+<h2>Welcome {{ .User.Email }}</h2>
+<form method="post">
+  <h1 class="h3 mb-3 fw-normal">Create post page</h1>
+  <!-- Title -->
+  <div class="form-floating">
+    <input
+      type="text"
+      class="form-control"
+      id="floatingInput"
+      name="title"
+      placeholder="title"
+      
+    />
+    <label for="floatingInput">Title</label>
+  </div>
+
+  <!-- Content -->
+  <div class="form-floating">
+    <textarea
+      type="text"
+      class="form-control"
+      id="content"
+      name="content"
+      placeholder="Content"
+      
+      ></textarea>
+    <label for="floatingInput">Content</label>
+  </div>
+  <!-- Tags -->
+  <div class="form-floating">
+    <input
+      type="text"
+      class="form-control"
+      id="tags"
+      name="tags"
+      placeholder="Enter your tags with spaces"
+      
+    />
+    <label for="floatingInput">Tags</label>
+  </div>
+
+  {{if .IsError.Error}}
+  <div>
+    <label>{{.IsError.Text}}</label>
+  </div>
+  {{end}}
+  <button class="w-100 btn btn-lg btn-primary" type="submit">Create</button>
+</form>
+{{end}}
